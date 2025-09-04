@@ -1,11 +1,19 @@
 <script lang="ts">
-	import Header from './Header.svelte';
-	import '../app.css';
-
 	let { children } = $props();
 </script>
 
-{@render children()}
+<div class="app">
+	<main>
+		{@render children()}
+	</main>
+	<footer>
+		<div role="tablist" class="tabs tabs-box flex w-full">
+			<span role="tab" class="tab flex-1/3">Statistic</span>
+			<span role="tab" class="tab tab-active flex-1/3">Fuel Up</span>
+			<span role="tab" class="tab flex-1/3">Data</span>
+		</div>
+	</footer>
+</div>
 
 <style>
 	.app {

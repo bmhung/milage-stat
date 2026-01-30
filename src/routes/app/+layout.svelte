@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	let { children } = $props();
 </script>
 
@@ -10,22 +11,28 @@
 	<footer>
 		<div role="tablist" class="tabs tabs-box flex w-full">
 			<a
-				href="/app/dashboard"
+				href={resolve('/app/dashboard')}
 				role="tab"
-				class="tab flex-1/3"
-				class:tab-active={$page.url.pathname === '/app/dashboard'}>Statistic</a
+				class="tab flex-1/4"
+				class:tab-active={page.url.pathname === '/app/dashboard'}>Statistic</a
 			>
 			<a
-				href="/app"
+				href={resolve('/app')}
 				role="tab"
-				class="tab flex-1/3"
-				class:tab-active={$page.url.pathname === '/app'}>Fuel Up</a
+				class="tab flex-1/4"
+				class:tab-active={page.url.pathname === '/app'}>Fuel Up</a
 			>
 			<a
-				href="/app/data"
+				href={resolve('/app/data')}
 				role="tab"
-				class="tab flex-1/3"
-				class:tab-active={$page.url.pathname === '/app/data'}>Data</a
+				class="tab flex-1/4"
+				class:tab-active={page.url.pathname === '/app/data'}>Data</a
+			>
+			<a
+				href={resolve('/app/settings')}
+				role="tab"
+				class="tab flex-1/4"
+				class:tab-active={page.url.pathname === '/app/settings'}>Settings</a
 			>
 		</div>
 	</footer>

@@ -3,12 +3,20 @@
 	import { db, user as currentUser } from '$lib/firebase';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { loadUserSettings, getPriceLabel, getAmountLabel, getUnitLabel } from '$lib/settings';
+	import { onMount } from 'svelte';
 
 	let odo = $state('');
 	let createdAt = new Date();
 	let price = $state('');
 	let amount = $state('');
 	let total = $derived(Number(price) * Number(amount));
+
+	onMount(async () => {
+		if ($currentUser) {
+			await loadUserSettings($currentUser.uid);
+		}
+	});
 
 	async function fuelUp() {
 		if (!$currentUser) {
@@ -41,9 +49,9 @@
 <div class="grid grid-cols-[100px_1fr] items-center">
 	<span>ODO</span>
 	<span></span>
-	<span>Price</span>
+	<span>{getPriceLabel()}</span>
 	<span></span>
-	<span>Amount</span>
+	<span>{getAmountLabel()}</span>
 	<span></span>
 </div>
 
@@ -54,11 +62,16 @@
 	<label for="odo">ODO</label>
 	<input id="odo" type="number" bind:value={odo} />
 
-	<label for="price">Price</label>
-	<input id="price" type="number" bind:value={price} />
+	<label for="price">{getPriceLabel()}</label>
+	<input id="price" type="number" bind:value={price} placeholder="Price per {getUnitLabel()}" />
 
-	<label for="amount">Amount</label>
-	<input id="amount" type="number" bind:value={amount} />
+	<label for="amount">{getAmountLabel()}</label>
+	<input
+		id="amount"
+		type="number"
+		bind:value={amount}
+		placeholder={`Amount in ${getUnitLabel()}`}
+	/>
 
 	<label for="total">Total</label>
 	<input id="total" type="number" bind:value={total} disabled />

@@ -1,17 +1,10 @@
 <script lang="ts">
-	import {
-		collection,
-		getDocs,
-		query,
-		where,
-		orderBy,
-		deleteDoc,
-		doc,
-		type QueryOrderByConstraint
-	} from 'firebase/firestore';
+	import { collection, getDocs, query, where, orderBy, deleteDoc, doc } from 'firebase/firestore';
 	import { user as currentUser, db } from '$lib/firebase';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { loadUserSettings, formatCurrency, getUnitLabel, formatAmount } from '$lib/settings';
 
 	let entries: any[] = $state([]);
 	let loading = $state(true);
@@ -24,9 +17,10 @@
 
 	onMount(async () => {
 		if (!$currentUser) {
-			goto('/app/login');
+			goto(resolve('/app/login'));
 			return;
 		}
+		await loadUserSettings($currentUser.uid);
 		await fetchEntries();
 	});
 
@@ -112,13 +106,6 @@
 		if (!timestamp) return '';
 		const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
 		return new Intl.DateTimeFormat('en-GB').format(date); // en-GB gives DD/MM/YYYY
-	}
-
-	function formatCurrency(amount: number) {
-		return new Intl.NumberFormat('en-US', {
-			style: 'currency',
-			currency: 'USD'
-		}).format(amount || 0);
 	}
 
 	function formatNumber(num: any) {
@@ -243,8 +230,8 @@
 						</div>
 						<div class="grid grid-cols-2 gap-1 text-sm">
 							<span>📍 ODO: {formatNumber(entry.odo)}</span>
-							<span>💰 {formatCurrency(entry.price)}/gal</span>
-							<span>⛽ {entry.amount} gal</span>
+							<span>💰 {formatCurrency(entry.price)}/{getUnitLabel()}</span>
+							<span>⛽ {formatAmount(entry.amount)}</span>
 							<span>💵 {formatCurrency(entry.total)}</span>
 						</div>
 					</div>

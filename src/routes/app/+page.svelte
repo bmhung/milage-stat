@@ -2,6 +2,7 @@
 	import { addDoc, collection } from 'firebase/firestore';
 	import { db, user as currentUser } from '$lib/firebase';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
 	let odo = $state('');
 	let createdAt = new Date();
@@ -11,7 +12,7 @@
 
 	async function fuelUp() {
 		if (!$currentUser) {
-			goto('/app/login');
+			goto(resolve('/app/login'));
 			return;
 		}
 
@@ -28,7 +29,6 @@
 		odo = '';
 		price = '';
 		amount = '';
-		createdAt = new Date();
 	}
 
 	function handleSubmit(event: SubmitEvent) {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { addDoc, collection } from 'firebase/firestore';
-	import { db } from '$lib/firebase';
+	import { db, user as currentUser } from '$lib/firebase';
+	import { goto } from '$app/navigation';
 
 	let odo = $state('');
 	let createdAt = new Date();
@@ -9,13 +10,25 @@
 	let total = $derived(Number(price) * Number(amount));
 
 	async function fuelUp() {
-		addDoc(collection(db, 'fills'), {
+		if (!$currentUser) {
+			goto('/app/login');
+			return;
+		}
+
+		await addDoc(collection(db, 'fills'), {
+			userId: $currentUser.uid,
 			odo,
 			createdAt,
 			price,
 			amount,
 			total
 		});
+
+		// Reset form after successful save
+		odo = '';
+		price = '';
+		amount = '';
+		createdAt = new Date();
 	}
 
 	function handleSubmit(event: SubmitEvent) {

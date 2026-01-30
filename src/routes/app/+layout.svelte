@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/stores';
 	let { children } = $props();
 </script>
 
@@ -8,9 +9,24 @@
 	</main>
 	<footer>
 		<div role="tablist" class="tabs tabs-box flex w-full">
-			<span role="tab" class="tab flex-1/3">Statistic</span>
-			<span role="tab" class="tab tab-active flex-1/3">Fuel Up</span>
-			<span role="tab" class="tab flex-1/3">Data</span>
+			<a
+				href="/app/dashboard"
+				role="tab"
+				class="tab flex-1/3"
+				class:tab-active={$page.url.pathname === '/app/dashboard'}>Statistic</a
+			>
+			<a
+				href="/app"
+				role="tab"
+				class="tab flex-1/3"
+				class:tab-active={$page.url.pathname === '/app'}>Fuel Up</a
+			>
+			<a
+				href="/app/data"
+				role="tab"
+				class="tab flex-1/3"
+				class:tab-active={$page.url.pathname === '/app/data'}>Data</a
+			>
 		</div>
 	</footer>
 </div>

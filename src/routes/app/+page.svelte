@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
+	import { addDoc, collection } from 'firebase/firestore';
 	import { db } from '$lib/firebase';
 
 	let odo = $state('');
@@ -23,6 +23,16 @@
 		fuelUp();
 	}
 </script>
+
+<span>Previously</span>
+<div class="grid grid-cols-[100px_1fr] items-center">
+	<span>ODO</span>
+	<span></span>
+	<span>Price</span>
+	<span></span>
+	<span>Amount</span>
+	<span></span>
+</div>
 
 <form class="grid grid-cols-[100px_1fr] items-center" onsubmit={handleSubmit}>
 	<label for="date">Date</label>

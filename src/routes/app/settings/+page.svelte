@@ -195,6 +195,19 @@
 			</div>
 		</div>
 
+		<!-- Data Management -->
+		<div class="card bg-base-100 mb-6 shadow-sm">
+			<div class="card-body">
+				<h3 class="card-title text-base">Data Management</h3>
+				<div class="space-y-3">
+					<p class="text-sm opacity-70">
+						View, edit, and manage all your fuel entries with filtering and sorting options.
+					</p>
+					<a href="/app/data" class="btn btn-outline btn-block"> 📊 View Fuel Data </a>
+				</div>
+			</div>
+		</div>
+
 		<!-- Actions -->
 		<div class="mb-4 flex gap-2">
 			<button onclick={saveSettings} class="btn btn-primary" disabled={!hasChanges() || saving}>

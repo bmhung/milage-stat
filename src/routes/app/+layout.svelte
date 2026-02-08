@@ -13,25 +13,19 @@
 			<a
 				href={resolve('/app/dashboard')}
 				role="tab"
-				class="tab flex-1/4"
+				class="tab flex-1/3"
 				class:tab-active={page.url.pathname === '/app/dashboard'}>Statistic</a
 			>
 			<a
 				href={resolve('/app')}
 				role="tab"
-				class="tab flex-1/4"
+				class="tab flex-1/3"
 				class:tab-active={page.url.pathname === '/app'}>Fuel Up</a
-			>
-			<a
-				href={resolve('/app/data')}
-				role="tab"
-				class="tab flex-1/4"
-				class:tab-active={page.url.pathname === '/app/data'}>Data</a
 			>
 			<a
 				href={resolve('/app/settings')}
 				role="tab"
-				class="tab flex-1/4"
+				class="tab flex-1/3"
 				class:tab-active={page.url.pathname === '/app/settings'}>Settings</a
 			>
 		</div>

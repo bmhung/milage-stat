@@ -49,6 +49,9 @@
 		"vitest": "^3.0.0"
 	},
 	"dependencies": {
-		"firebase": "^11.6.0"
+		"chart.js": "^4.5.1",
+		"date-fns": "^4.1.0",
+		"firebase": "^11.6.0",
+		"svelte-chartjs-2": "^0.1.0"
 	}
 }

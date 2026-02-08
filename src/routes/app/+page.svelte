@@ -24,12 +24,15 @@
 	}
 
 	let odo = $state('');
-	let createdAt = new Date();
+	let createdAt = $state(formatDateTimeForInput(new Date()));
 	let price = $state('');
 	let amount = $state('');
 	let total = $derived(Number(price) * Number(amount));
 	let lastEntry: FuelEntry | null = $state(null);
 	let loadingPrevious = $state(true);
+	let submitting = $state(false);
+	let showSuccess = $state(false);
+	let submissionMessage = $state('');
 
 	// Real-time calculations
 	let distanceSinceLastFill = $derived(
@@ -57,6 +60,7 @@
 			? `ODO must be greater than last entry (${(lastEntry as FuelEntry).odo})`
 			: ''
 	);
+	let isFormValid = $derived(odo && price && amount && !odoError);
 
 	$effect(() => {
 		async function loadUserData() {
@@ -117,28 +121,72 @@
 		}
 	}
 
+	function formatDateTimeForInput(date: Date): string {
+		const d = new Date(date);
+		// Format as YYYY-MM-DDTHH:MM for datetime-local input
+		const year = d.getFullYear();
+		const month = String(d.getMonth() + 1).padStart(2, '0');
+		const day = String(d.getDate()).padStart(2, '0');
+		const hours = String(d.getHours()).padStart(2, '0');
+		const minutes = String(d.getMinutes()).padStart(2, '0');
+		return `${year}-${month}-${day}T${hours}:${minutes}`;
+	}
+
+	// Initialize createdAt with current date-time in proper format
+	createdAt = formatDateTimeForInput(new Date());
+
+	// Keyboard navigation helpers
+	function handleKeydown(event: KeyboardEvent, nextFieldId?: string) {
+		if (event.key === 'Enter' && nextFieldId) {
+			event.preventDefault();
+			const nextField = document.getElementById(nextFieldId) as HTMLInputElement;
+			if (nextField) {
+				nextField.focus();
+			}
+		}
+	}
+
 	async function fuelUp() {
 		if (!$currentUser) {
 			goto(resolve('/app/login'));
 			return;
 		}
 
-		await addDoc(collection(db, 'fills'), {
-			userId: $currentUser.uid,
-			odo,
-			createdAt,
-			price,
-			amount,
-			total
-		});
+		try {
+			submitting = true;
 
-		// Reset form after successful save
-		odo = '';
-		price = '';
-		amount = '';
+			await addDoc(collection(db, 'fills'), {
+				userId: $currentUser.uid,
+				odo: Number(odo),
+				createdAt: new Date(createdAt),
+				price: Number(price),
+				amount: Number(amount),
+				total
+			});
 
-		// Refresh last entry data
-		await fetchLastEntry();
+			// Show success message
+			submissionMessage = `Fuel entry saved successfully! Total: ${formatCurrency(total)}`;
+			showSuccess = true;
+
+			// Reset form after successful save
+			odo = '';
+			price = '';
+			amount = '';
+
+			// Refresh last entry data
+			await fetchLastEntry();
+
+			// Hide success message after 3 seconds
+			setTimeout(() => {
+				showSuccess = false;
+			}, 3000);
+		} catch (error: any) {
+			console.error('Error saving fuel entry:', error);
+			submissionMessage = `Error saving fuel entry: ${error.message}`;
+			showSuccess = true;
+		} finally {
+			submitting = false;
+		}
 	}
 
 	function handleSubmit(event: SubmitEvent) {
@@ -231,6 +279,18 @@
 	</div>
 {/if}
 
+<!-- Success/Error Messages -->
+{#if showSuccess}
+	<div class="alert {submissionMessage.includes('Error') ? 'alert-error' : 'alert-success'} mb-4">
+		<div class="flex items-center justify-between">
+			<span>{submissionMessage}</span>
+			<button type="button" class="btn btn-ghost btn-sm" onclick={() => (showSuccess = false)}>
+				✕
+			</button>
+		</div>
+	</div>
+{/if}
+
 <!-- Validation Errors -->
 {#if odoError}
 	<div class="alert alert-error mb-4">
@@ -238,15 +298,44 @@
 	</div>
 {/if}
 
-<form class="grid grid-cols-[100px_1fr] items-center" onsubmit={handleSubmit}>
+<form class="grid grid-cols-[100px_1fr] items-center gap-4" onsubmit={handleSubmit}>
 	<label for="date">Date</label>
-	<p>{createdAt.toString()}</p>
+	<input
+		id="date"
+		type="datetime-local"
+		bind:value={createdAt}
+		class="input input-bordered"
+		onkeydown={(e) => handleKeydown(e, 'odo')}
+		disabled={submitting}
+	/>
 
 	<label for="odo">ODO</label>
-	<input id="odo" type="number" bind:value={odo} />
+	<div class="flex items-center gap-2">
+		<input
+			id="odo"
+			type="number"
+			bind:value={odo}
+			placeholder="Current odometer reading"
+			class="input input-bordered flex-1 {odoError ? 'input-error' : ''}"
+			disabled={submitting}
+			onkeydown={(e) => handleKeydown(e, 'price')}
+		/>
+		{#if odoError}
+			<div class="text-error text-xs" title={odoError}>⚠️</div>
+		{/if}
+	</div>
 
 	<label for="price">{getPriceLabel()}</label>
-	<input id="price" type="number" bind:value={price} placeholder="Price per {getUnitLabel()}" />
+	<input
+		id="price"
+		type="number"
+		bind:value={price}
+		placeholder={`Price per ${getUnitLabel()}`}
+		class="input input-bordered"
+		step="0.01"
+		disabled={submitting}
+		onkeydown={(e) => handleKeydown(e, 'amount')}
+	/>
 
 	<label for="amount">{getAmountLabel()}</label>
 	<input
@@ -254,14 +343,51 @@
 		type="number"
 		bind:value={amount}
 		placeholder={`Amount in ${getUnitLabel()}`}
+		class="input input-bordered"
+		step="0.01"
+		disabled={submitting}
+		onkeydown={(e) => handleKeydown(e)}
 	/>
 
 	<label for="total">Total</label>
-	<input id="total" type="number" bind:value={total} disabled />
+	<input
+		id="total"
+		type="number"
+		bind:value={total}
+		disabled
+		class="input input-bordered bg-base-200"
+		readonly
+	/>
 
 	<div class="col-span-2">
-		<button class="btn btn-primary w-full" type="submit" value="submit" aria-label="submit">
-			Submit
+		<button
+			class="btn btn-primary w-full"
+			type="submit"
+			value="submit"
+			aria-label="submit"
+			disabled={!isFormValid || submitting}
+		>
+			{#if submitting}
+				<span class="loading loading-spinner loading-sm"></span>
+				Saving...
+			{:else if !isFormValid}
+				{odoError ? 'Fix validation errors' : 'Fill in all fields'}
+			{:else}
+				Save Fuel Entry
+			{/if}
 		</button>
 	</div>
 </form>
+
+<!-- Loading Overlay -->
+{#if submitting}
+	<div class="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+		<div class="card bg-base-100 shadow-lg">
+			<div class="card-body p-6 text-center">
+				<div class="loading loading-spinner loading-lg mb-4"></div>
+				<h3 class="text-lg font-semibold">Saving Fuel Entry</h3>
+				<p class="text-sm opacity-70">Please wait while we save your data...</p>
+			</div>
+		</div>
+	</div>
+{/if}

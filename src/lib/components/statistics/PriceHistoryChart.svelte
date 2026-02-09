@@ -25,12 +25,20 @@
 	function updateChartData() {
 		const sortedEntries = entries
 			.filter((e) => e.price && e.price > 0)
-			.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+			.sort((a, b) => {
+				const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt);
+				const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt);
+				return dateA.getTime() - dateB.getTime();
+			});
 
-		const priceData: PriceData[] = sortedEntries.map((entry) => ({
-			date: new Date(entry.createdAt),
-			price: entry.price
-		}));
+		const priceData: PriceData[] = sortedEntries.map((entry) => {
+			const entryDate =
+				entry.createdAt instanceof Date ? entry.createdAt : new Date(entry.createdAt);
+			return {
+				date: entryDate,
+				price: entry.price
+			};
+		});
 
 		const labels = priceData.map((d) =>
 			d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })

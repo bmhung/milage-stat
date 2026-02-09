@@ -61,7 +61,8 @@ export function groupByMonth(entries: FuelEntry[]): CostData[] {
 	const monthlyData: { [key: string]: FuelEntry[] } = {};
 
 	entries.forEach((entry) => {
-		const month = entry.createdAt.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+		const entryDate = entry.createdAt instanceof Date ? entry.createdAt : entry.createdAt.toDate();
+		const month = entryDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 		if (!monthlyData[month]) monthlyData[month] = [];
 		monthlyData[month].push(entry);
 	});
@@ -81,8 +82,11 @@ export function generateEfficiencyTrend(entries: FuelEntry[]): EfficiencyData[] 
 		const prevEntry = entries[i - 1];
 		const currEntry = entries[i];
 
+		const entryDate =
+			currEntry.createdAt instanceof Date ? currEntry.createdAt : currEntry.createdAt.toDate();
+
 		trendData.push({
-			date: currEntry.createdAt,
+			date: entryDate,
 			actual: calculateEfficiency(prevEntry, currEntry)
 		});
 	}
@@ -91,10 +95,13 @@ export function generateEfficiencyTrend(entries: FuelEntry[]): EfficiencyData[] 
 }
 
 export function generatePriceHistory(entries: FuelEntry[]): PriceData[] {
-	return entries.map((entry) => ({
-		date: entry.createdAt,
-		price: entry.price
-	}));
+	return entries.map((entry) => {
+		const entryDate = entry.createdAt instanceof Date ? entry.createdAt : entry.createdAt.toDate();
+		return {
+			date: entryDate,
+			price: entry.price
+		};
+	});
 }
 
 export function generatePredictions(entries: FuelEntry[], months: number = 3): PredictionData[] {
@@ -186,7 +193,8 @@ export function analyzeTrends(entries: FuelEntry[]): TrendAnalysis {
 	const monthlyEfficiency: { [key: string]: number[] } = {};
 	entries.forEach((entry, i) => {
 		if (i === 0) return;
-		const month = entry.createdAt.getMonth();
+		const entryDate = entry.createdAt instanceof Date ? entry.createdAt : entry.createdAt.toDate();
+		const month = entryDate.getMonth();
 		const efficiency = calculateEfficiency(entries[i - 1], entry);
 		if (!monthlyEfficiency[month]) monthlyEfficiency[month] = [];
 		monthlyEfficiency[month].push(efficiency);
@@ -216,4 +224,8 @@ export function filterEntriesByDateRange(
 		const entryDate = entry.createdAt instanceof Date ? entry.createdAt : entry.createdAt.toDate();
 		return entryDate >= startDate && entryDate <= endDate;
 	});
+}
+
+export function getEntryDate(entry: FuelEntry): Date {
+	return entry.createdAt instanceof Date ? entry.createdAt : entry.createdAt.toDate();
 }

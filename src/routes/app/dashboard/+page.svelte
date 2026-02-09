@@ -84,16 +84,18 @@
 			const q = query(
 				collection(db, 'fills'),
 				where('userId', '==', $currentUser.uid),
-				orderBy('createdAt', 'asc')
+				orderBy('actualDate', 'asc')
 			);
 
 			const querySnapshot = await getDocs(q);
 			entries = querySnapshot.docs.map((doc) => ({
 				id: doc.id,
 				...doc.data(),
-				createdAt: doc.data().createdAt?.toDate
-					? doc.data().createdAt.toDate()
-					: new Date(doc.data().createdAt)
+				createdAt: doc.data().actualDate?.toDate
+					? doc.data().actualDate.toDate()
+					: doc.data().createdAt?.toDate
+						? doc.data().createdAt.toDate()
+						: new Date(doc.data().createdAt || doc.data().actualDate)
 			})) as FuelEntry[];
 		} catch (err: any) {
 			error = err.message;
@@ -197,4 +199,3 @@
 		</div>
 	{/if}
 </div>
-

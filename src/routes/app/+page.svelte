@@ -83,16 +83,22 @@
 			const q = query(
 				collection(db, 'fills'),
 				where('userId', '==', $currentUser.uid),
-				orderBy('createdAt', 'desc'),
+				orderBy('actualDate', 'desc'),
 				limit(1)
 			);
 
 			const querySnapshot = await getDocs(q);
 			if (!querySnapshot.empty) {
 				const doc = querySnapshot.docs[0];
+				const data = doc.data();
 				lastEntry = {
 					id: doc.id,
-					...doc.data()
+					...data,
+					createdAt: data.actualDate?.toDate
+						? data.actualDate.toDate()
+						: data.createdAt?.toDate
+							? data.createdAt.toDate()
+							: new Date(data.createdAt || data.actualDate)
 				} as FuelEntry;
 			}
 		} catch (error) {
@@ -158,7 +164,8 @@
 			await addDoc(collection(db, 'fills'), {
 				userId: $currentUser.uid,
 				odo: Number(odo),
-				createdAt: new Date(createdAt),
+				createdAt: new Date(),
+				actualDate: new Date(createdAt),
 				price: Number(price),
 				amount: Number(amount),
 				total

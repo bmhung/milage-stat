@@ -9,7 +9,7 @@
 	let entries: any[] = $state([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
-	let sortBy = $state('createdAt');
+	let sortBy = $state('actualDate');
 	let sortOrder = $state('desc');
 	let startDate = $state('');
 	let endDate = $state('');
@@ -45,8 +45,8 @@
 				q = query(
 					collection(db, 'fills'),
 					where('userId', '==', $currentUser.uid),
-					where('createdAt', '>=', start),
-					where('createdAt', '<=', end),
+					where('actualDate', '>=', start),
+					where('actualDate', '<=', end),
 					orderBy(sortBy, sortOrder as 'asc' | 'desc')
 				);
 			}
@@ -108,6 +108,11 @@
 		return new Intl.DateTimeFormat('en-GB').format(date); // en-GB gives DD/MM/YYYY
 	}
 
+	function getEntryDate(entry: any) {
+		// Use actualDate if available (for imported data), otherwise use createdAt
+		return entry.actualDate || entry.createdAt;
+	}
+
 	function formatNumber(num: any) {
 		return Number(num || 0).toLocaleString();
 	}
@@ -143,10 +148,10 @@
 		<!-- Sort Controls -->
 		<div class="mb-4 flex flex-wrap gap-2">
 			<button
-				class="btn btn-sm {sortBy === 'createdAt' ? 'btn-primary' : 'btn-outline'}"
-				onclick={() => toggleSort('createdAt')}
+				class="btn btn-sm {sortBy === 'actualDate' ? 'btn-primary' : 'btn-outline'}"
+				onclick={() => toggleSort('actualDate')}
 			>
-				Date {sortBy === 'createdAt' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}
+				Date {sortBy === 'actualDate' ? (sortOrder === 'desc' ? '↓' : '↑') : ''}
 			</button>
 			<button
 				class="btn btn-sm {sortBy === 'odo' ? 'btn-primary' : 'btn-outline'}"
@@ -219,7 +224,7 @@
 				<div class="card compact bg-base-100 shadow-sm transition-shadow hover:shadow-md">
 					<div class="card-body p-3">
 						<div class="flex items-start justify-between">
-							<div class="text-sm opacity-70">{formatDate(entry.createdAt)}</div>
+							<div class="text-sm opacity-70">{formatDate(getEntryDate(entry))}</div>
 							<button
 								class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-error-content"
 								onclick={() => deleteEntry(entry.id)}

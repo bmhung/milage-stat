@@ -9,9 +9,10 @@
 		getUnitLabel
 	} from '$lib/settings';
 	import { get } from 'svelte/store';
-	import { user as currentUser } from '$lib/firebase';
+	import { user as currentUser, db } from '$lib/firebase';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 	let settings = $state({
 		currency: 'USD' as 'USD' | 'VND',
@@ -21,7 +22,13 @@
 	let loading = $state(true);
 	let saving = $state(false);
 	let message = $state<string | null>(null);
-	let originalSettings = $state(settings);
+	let originalSettings = $state({ ...settings });
+
+	// CSV Import states
+	let importing = $state(false);
+	let importFile = $state<File | null>(null);
+	let importProgress = $state('');
+	let importStats = $state({ imported: 0, errors: 0, total: 0 });
 
 	onMount(async () => {
 		if (!get(currentUser)) {
@@ -98,6 +105,163 @@
 
 	function previewAmount() {
 		return formatCurrency(123.45);
+	}
+
+	// CSV Import Functions
+	async function handleFileSelect(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+		if (!file) return;
+
+		if (!file.name.toLowerCase().endsWith('.csv')) {
+			message = 'Please select a CSV file';
+			setTimeout(() => (message = null), 3000);
+			return;
+		}
+
+		importFile = file;
+		await processImportFile();
+	}
+
+	async function processImportFile() {
+		if (!importFile || !get(currentUser)) return;
+
+		try {
+			importing = true;
+			message = null;
+			importProgress = 'Reading CSV file...';
+
+			const text = await importFile.text();
+			const rows = parseCSV(text);
+
+			if (rows.length === 0) {
+				message = 'No valid data found in CSV file';
+				return;
+			}
+
+			importProgress = `Importing ${rows.length} entries...`;
+			await importToFierebase(rows);
+
+			message = `Successfully imported ${importStats.imported} entries${importStats.errors > 0 ? ` (${importStats.errors} errors)` : ''}`;
+			setTimeout(() => (message = null), 5000);
+		} catch (error: any) {
+			message = `Import failed: ${error.message}`;
+		} finally {
+			importing = false;
+			importProgress = '';
+			// Clear file input
+			const fileInput = document.getElementById('csv-file-input') as HTMLInputElement;
+			if (fileInput) fileInput.value = '';
+			importFile = null;
+		}
+	}
+
+	function parseCSV(text: string): any[] {
+		const lines = text.trim().split('\n');
+		if (lines.length < 2) {
+			throw new Error('CSV file must have header and at least one data row');
+		}
+
+		const headers = lines[0].split(';').map((h) => h.trim().toLowerCase());
+		const expectedHeaders = ['date', 'odo', 'price', 'amount', 'total'];
+		console.log(headers);
+
+		// Validate headers
+		for (const expected of expectedHeaders) {
+			if (!headers.includes(expected)) {
+				throw new Error(`Missing required column: ${expected}`);
+			}
+		}
+
+		const rows = [];
+		importStats = { imported: 0, errors: 0, total: lines.length - 1 };
+
+		for (let i = 1; i < lines.length; i++) {
+			try {
+				const values = lines[i].split(';').map((v) => v.trim());
+				const row: any = {};
+
+				headers.forEach((header, index) => {
+					row[header] = values[index];
+				});
+
+				// Validate and convert data
+				const validatedRow = validateCSVRow(row);
+				if (validatedRow) {
+					rows.push(validatedRow);
+					importStats.imported++;
+				} else {
+					importStats.errors++;
+				}
+			} catch (error) {
+				importStats.errors++;
+			}
+		}
+
+		return rows;
+	}
+
+	function validateCSVRow(row: any): any | null {
+		console.log(row);
+		try {
+			// Parse date from dd-mm-yyyy format
+			const dateStr = row.date;
+			const dateParts = dateStr.split('-');
+			if (dateParts.length !== 3) {
+				throw new Error('Invalid date format');
+			}
+			const day = parseInt(dateParts[0]);
+			const month = parseInt(dateParts[1]);
+			const year = parseInt(dateParts[2]);
+
+			const date = new Date(year, month - 1, day);
+			if (isNaN(date.getTime())) {
+				throw new Error('Invalid date');
+			}
+
+			return {
+				createdAt: date,
+				odo: parseFloat(row.odo),
+				price: parseFloat(row.price),
+				amount: parseFloat(row.amount),
+				total: parseFloat(row.total)
+			};
+		} catch (error) {
+			return null;
+		}
+	}
+
+	async function importToFierebase(rows: any[]) {
+		if (!get(currentUser)) return;
+
+		const userId = get(currentUser)!.uid;
+		const batchSize = 10; // Process in batches to avoid overwhelming Firestore
+		let processed = 0;
+
+		for (let i = 0; i < rows.length; i += batchSize) {
+			const batch = rows.slice(i, i + batchSize);
+
+			for (const row of batch) {
+				try {
+					await addDoc(collection(db, 'fills'), {
+						userId,
+						createdAt: serverTimestamp(),
+						// Store the actual date for sorting/filtering
+						actualDate: row.createdAt,
+						odo: row.odo,
+						price: row.price,
+						amount: row.amount,
+						total: row.total
+					});
+					processed++;
+				} catch (error) {
+					importStats.errors++;
+				}
+			}
+
+			// Update progress
+			importProgress = `Imported ${processed}/${rows.length} entries...`;
+		}
 	}
 </script>
 
@@ -204,13 +368,50 @@
 						View, edit, and manage all your fuel entries with filtering and sorting options.
 					</p>
 					<a href="/app/data" class="btn btn-outline btn-block"> 📊 View Fuel Data </a>
+
+					<!-- CSV Import Section -->
+					<div class="divider text-sm">OR</div>
+
+					<div>
+						<p class="mb-2 text-sm opacity-70">Import historical fuel data from a CSV file.</p>
+						<p class="mb-3 text-xs opacity-60">
+							Expected columns: date(dd-mm-yyyy), odo, price, amount, total
+						</p>
+
+						<input
+							id="csv-file-input"
+							type="file"
+							accept=".csv"
+							onchange={handleFileSelect}
+							disabled={importing || saving}
+							class="file-input file-input-sm file-input-bordered w-full"
+						/>
+
+						{#if importing}
+							<div class="mt-2">
+								<div class="flex items-center gap-2">
+									<span class="loading loading-spinner loading-xs"></span>
+									<span class="text-sm">{importProgress}</span>
+								</div>
+								{#if importStats.total > 0}
+									<div class="mt-1 text-xs opacity-70">
+										Imported: {importStats.imported} | Errors: {importStats.errors}
+									</div>
+								{/if}
+							</div>
+						{/if}
+					</div>
 				</div>
 			</div>
 		</div>
 
 		<!-- Actions -->
 		<div class="mb-4 flex gap-2">
-			<button onclick={saveSettings} class="btn btn-primary" disabled={!hasChanges() || saving}>
+			<button
+				onclick={saveSettings}
+				class="btn btn-primary"
+				disabled={!hasChanges() || saving || importing}
+			>
 				{#if saving}
 					<span class="loading loading-spinner loading-sm"></span>
 					Saving...
@@ -219,7 +420,7 @@
 				{/if}
 			</button>
 
-			<button onclick={resetToDefaults} class="btn btn-ghost" disabled={saving}>
+			<button onclick={resetToDefaults} class="btn btn-ghost" disabled={saving || importing}>
 				Reset to Defaults
 			</button>
 		</div>

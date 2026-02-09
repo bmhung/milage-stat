@@ -344,7 +344,7 @@
 		bind:value={amount}
 		placeholder={`Amount in ${getUnitLabel()}`}
 		class="input input-bordered"
-		step="0.01"
+		step="0.001"
 		disabled={submitting}
 		onkeydown={(e) => handleKeydown(e)}
 	/>

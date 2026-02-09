@@ -31,7 +31,7 @@
 	// Derived state for filtered data
 	let filteredEntries = $derived(() => {
 		if (entries.length === 0) return [];
-		
+
 		const dateRanges: { [key: string]: () => { start: Date; end: Date } } = {
 			'30days': () => ({ start: subDays(new Date(), 30), end: new Date() }),
 			'3months': () => ({ start: subMonths(new Date(), 3), end: new Date() }),
@@ -47,14 +47,16 @@
 	// Derived statistics
 	let statistics = $derived(() => {
 		const filtered = filteredEntries();
-		return filtered.length > 0 ? analyzeTrends(filtered) : {
-			overallTrend: 'stable',
-			averageEfficiency: 0,
-			totalCost: 0,
-			totalDistance: 0,
-			fillUpCount: 0,
-			seasonalVariation: 0
-		};
+		return filtered.length > 0
+			? analyzeTrends(filtered)
+			: {
+					overallTrend: 'stable',
+					averageEfficiency: 0,
+					totalCost: 0,
+					totalDistance: 0,
+					fillUpCount: 0,
+					seasonalVariation: 0
+				};
 	});
 
 	// Check mobile viewport
@@ -78,7 +80,7 @@
 
 		try {
 			await loadUserSettings($currentUser.uid);
-			
+
 			const q = query(
 				collection(db, 'fills'),
 				where('userId', '==', $currentUser.uid),
@@ -86,12 +88,13 @@
 			);
 
 			const querySnapshot = await getDocs(q);
-			entries = querySnapshot.docs.map(doc => ({
+			entries = querySnapshot.docs.map((doc) => ({
 				id: doc.id,
 				...doc.data(),
-				createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date(doc.data().createdAt)
+				createdAt: doc.data().createdAt?.toDate
+					? doc.data().createdAt.toDate()
+					: new Date(doc.data().createdAt)
 			})) as FuelEntry[];
-
 		} catch (err: any) {
 			error = err.message;
 		} finally {
@@ -106,7 +109,7 @@
 	function formatEfficiencyValue(value: number): string {
 		const unitLabel = getUnitLabel();
 		const currentUnits = $units;
-		
+
 		if (!value) return '0';
 		if (currentUnits === 'metric') {
 			return `${value.toFixed(2)} L/100km`;
@@ -116,6 +119,8 @@
 	}
 
 	function formatDistance(value: number): string {
+		const currentUnits = $units;
+
 		return `${value.toLocaleString()} ${currentUnits === 'metric' ? 'km' : 'miles'}`;
 	}
 </script>
@@ -143,34 +148,30 @@
 		</div>
 	{:else if entries.length === 0}
 		<div class="py-8 text-center opacity-70">
-			<h3 class="text-lg font-semibold mb-2">No fuel data available</h3>
+			<h3 class="mb-2 text-lg font-semibold">No fuel data available</h3>
 			<p>Add your first fuel entry to see statistics and trends!</p>
 		</div>
 	{:else}
 		<!-- KPI Cards -->
-		<div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
+		<div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
 			<StatCard
 				title="Average Efficiency"
 				value={formatEfficiencyValue(statistics().averageEfficiency)}
 				icon="📈"
 				trend={statistics().overallTrend}
-				trendValue={statistics().overallTrend === 'up' ? 'Improving' : statistics().overallTrend === 'down' ? 'Declining' : 'Stable'}
+				trendValue={statistics().overallTrend === 'up'
+					? 'Improving'
+					: statistics().overallTrend === 'down'
+						? 'Declining'
+						: 'Stable'}
 			/>
-			<StatCard
-				title="Total Cost"
-				value={formatCurrency(statistics().totalCost)}
-				icon="💰"
-			/>
+			<StatCard title="Total Cost" value={formatCurrency(statistics().totalCost)} icon="💰" />
 			<StatCard
 				title="Total Distance"
 				value={formatDistance(statistics().totalDistance)}
 				icon="📍"
 			/>
-			<StatCard
-				title="Number of Fill-ups"
-				value={statistics().fillUpCount}
-				icon="⛽"
-			/>
+			<StatCard title="Number of Fill-ups" value={statistics().fillUpCount} icon="⛽" />
 		</div>
 
 		<!-- Charts Section - Mobile First Layout -->
@@ -192,8 +193,8 @@
 			</div>
 
 			<!-- Predictive Insights - Full Width -->
-			<PredictiveInsights {entries={filteredEntries()} />
+			<PredictiveInsights entries={filteredEntries()} />
 		</div>
-	</div>
 	{/if}
 </div>
+

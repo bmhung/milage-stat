@@ -7,15 +7,17 @@ import { writable } from 'svelte/store';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
+console.log('env', import.meta.env);
 // Your web app's Firebase configuration
 const firebaseConfig = {
-	apiKey: 'AIzaSyC90nvT_WAo6z39fQ6QOm5tXAon1frpfgs',
+	apiKey: import.meta.env.VITE_API_KEY,
+	projectId: import.meta.env.VITE_PROJECT_ID,
+	messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+	appId: import.meta.env.VITE_APP_ID,
 	authDomain: 'milagestat.firebaseapp.com',
-	projectId: 'milagestat',
-	storageBucket: 'milagestat.firebasestorage.app',
-	messagingSenderId: '26150594726',
-	appId: '1:26150594726:web:e586fc45597b582be0ac67'
+	storageBucket: 'milagestat.firebasestorage.app'
 };
+console.log(firebaseConfig);
 
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);

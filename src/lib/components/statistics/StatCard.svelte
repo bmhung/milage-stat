@@ -48,7 +48,7 @@
 				<span class="text-lg">{icon}</span>
 				<div>
 					<div class="text-sm opacity-70">{title}</div>
-					<div class="text-lg font-bold">{formatDisplayValue(value)}</div>
+					<div class="text-lg font-bold">{value}</div>
 				</div>
 			</div>
 			{#if trend && trendValue}

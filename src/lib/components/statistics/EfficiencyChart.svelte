@@ -30,7 +30,7 @@
 
 		const labels = [
 			...efficiencyData.map((d) =>
-				d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+				d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 			),
 			...predictions.map((p) => p.month)
 		];

@@ -26,15 +26,6 @@
 			}
 		},
 		{
-			label: 'Last 30 Days',
-			value: '30days',
-			getStartEnd: () => {
-				const end = new Date();
-				const start = subDays(end, 30);
-				return { start, end };
-			}
-		},
-		{
 			label: 'Last 3 Months',
 			value: '3months',
 			getStartEnd: () => {
@@ -81,24 +72,40 @@
 		const range = dateRanges.find((r) => r.value === period);
 		return range ? range.getStartEnd() : { start: new Date(), end: new Date() };
 	}
+
+	function handlePeriodSelect(period: string) {
+		onPeriodChange(period);
+	}
 </script>
 
-<div class="dropdown dropdown-bottom dropdown-end">
-	<div tabindex="0" role="button" class="btn btn-primary btn-sm m-1">
-		{dateRanges.find((r) => r.value === selectedPeriod)?.label || 'Select Period'}
-	</div>
-	<ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box w-52 p-2 shadow">
+<!-- Tab-style period selector -->
+<div class="w-full">
+	<!-- Mobile: stacked buttons, Desktop: horizontal -->
+	<div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center" role="group">
 		{#each dateRanges as range}
-			<li>
-				<a
-					href="#"
-					class="menu-item"
-					class:selected={selectedPeriod === range.value}
-					onclick={() => onPeriodChange(range.value)}
-				>
-					{range.label}
-				</a>
-			</li>
+			<button
+				type="button"
+				class="btn btn-sm min-w-fit justify-center whitespace-nowrap transition-all duration-200 {selectedPeriod ===
+				range.value
+					? 'btn-primary no-animation'
+					: 'btn-outline hover:btn-primary/50'}"
+				aria-pressed={selectedPeriod === range.value}
+				onclick={() => handlePeriodSelect(range.value)}
+			>
+				{range.label}
+			</button>
 		{/each}
-	</ul>
+	</div>
 </div>
+
+<style>
+	/* Custom styles for better responsive behavior */
+	@media (max-width: 640px) {
+		:global(.btn-sm) {
+			font-size: 0.75rem;
+			height: 2rem;
+			padding-left: 0.75rem;
+			padding-right: 0.75rem;
+		}
+	}
+</style>

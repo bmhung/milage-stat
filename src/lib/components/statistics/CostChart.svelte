@@ -34,14 +34,16 @@
 					data: monthlyData.map((d) => d.cost),
 					backgroundColor: '#10B981',
 					borderColor: '#10B981',
-					borderWidth: 1
+					borderWidth: 1,
+					yAxisID: 'y'
 				},
 				{
 					label: 'Volume',
 					data: monthlyData.map((d) => d.volume),
 					backgroundColor: '#F59E0B',
 					borderColor: '#F59E0B',
-					borderWidth: 1
+					borderWidth: 1,
+					yAxisID: 'y1'
 				}
 			]
 		};

@@ -98,6 +98,18 @@ export const createCostChartOptions = (isMobile: boolean): ChartConfiguration<'b
 					display: true,
 					text: 'Amount'
 				}
+			},
+			y1: {
+				type: 'linear',
+				position: 'right',
+				beginAtZero: true,
+				title: {
+					display: true,
+					text: 'Volume'
+				},
+				grid: {
+					drawOnChartArea: false
+				}
 			}
 		},
 		plugins: {

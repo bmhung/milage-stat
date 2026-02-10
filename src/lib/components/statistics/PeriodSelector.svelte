@@ -16,6 +16,16 @@
 
 	const dateRanges: DateRange[] = [
 		{
+			label: 'Since Beginning',
+			value: 'all',
+			getStartEnd: () => {
+				const end = new Date();
+				// Start from a very early date to include all data
+				const start = new Date('2000-01-01');
+				return { start, end };
+			}
+		},
+		{
 			label: 'Last 30 Days',
 			value: '30days',
 			getStartEnd: () => {

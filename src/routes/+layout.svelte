@@ -2,6 +2,7 @@
 	import '../app.css';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import NetworkStatus from '$lib/components/pwa/NetworkStatus.svelte';
 	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 
 	let { children } = $props();
@@ -9,6 +10,7 @@
 </script>
 
 <div class="app">
+	<NetworkStatus />
 	<main>
 		{@render children()}
 	</main>

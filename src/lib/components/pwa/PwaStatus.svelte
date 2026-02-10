@@ -7,7 +7,7 @@
 
 	onMount(() => {
 		// Check if app is already installed
-		if (window.matchMedia('(display-mode: standalone)').matches) {
+		if (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) {
 			showInstallButton = false;
 		} else {
 			installPrompt.subscribe((prompt: any) => {

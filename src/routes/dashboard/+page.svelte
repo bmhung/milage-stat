@@ -24,7 +24,7 @@
 
 	let entries: FuelEntry[] = $state([]);
 	let loading = $state(true);
-	let selectedPeriod = $state('3months');
+	let selectedPeriod = $state('all');
 	let isMobile = $state(false);
 	let error = $state<string | null>(null);
 
@@ -33,6 +33,7 @@
 		if (entries.length === 0) return [];
 
 		const dateRanges: { [key: string]: () => { start: Date; end: Date } } = {
+			all: () => ({ start: new Date('2000-01-01'), end: new Date() }),
 			'30days': () => ({ start: subDays(new Date(), 30), end: new Date() }),
 			'3months': () => ({ start: subMonths(new Date(), 3), end: new Date() }),
 			'6months': () => ({ start: subMonths(new Date(), 6), end: new Date() }),
@@ -74,7 +75,7 @@
 
 	onMount(async () => {
 		if (!$currentUser) {
-			goto(resolve('/app/login'));
+			goto(resolve('/login'));
 			return;
 		}
 

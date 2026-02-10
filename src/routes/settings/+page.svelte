@@ -32,7 +32,7 @@
 
 	onMount(async () => {
 		if (!get(currentUser)) {
-			goto('/app/login');
+			goto('/login');
 			return;
 		}
 

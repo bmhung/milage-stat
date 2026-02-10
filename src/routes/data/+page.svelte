@@ -17,7 +17,7 @@
 
 	onMount(async () => {
 		if (!$currentUser) {
-			goto(resolve('/app/login'));
+			goto(resolve('/login'));
 			return;
 		}
 		await loadUserSettings($currentUser.uid);

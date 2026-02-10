@@ -14,9 +14,9 @@ export interface SyncQueueItem {
 }
 
 export const networkStatus = writable<NetworkStatus>({
-	isOnline: navigator.onLine,
-	isSupported: 'connection' in navigator,
-	connectionType: (navigator as any).connection?.effectiveType
+	isOnline: true,
+	isSupported: false,
+	connectionType: undefined
 });
 
 export const syncQueue = writable<SyncQueueItem[]>([]);
@@ -25,11 +25,19 @@ export let installPrompt: any = writable(null);
 
 // Initialize network status listeners
 if (typeof window !== 'undefined') {
+	// Set initial values in browser environment
+	networkStatus.update((status) => ({
+		...status,
+		isOnline: window.navigator.onLine,
+		isSupported: 'connection' in navigator,
+		connectionType: (window.navigator as any).connection?.effectiveType
+	}));
+
 	const updateNetworkStatus = () => {
 		networkStatus.update((status) => ({
 			...status,
-			isOnline: navigator.onLine,
-			connectionType: (navigator as any).connection?.effectiveType
+			isOnline: window.navigator.onLine,
+			connectionType: (window.navigator as any).connection?.effectiveType
 		}));
 	};
 

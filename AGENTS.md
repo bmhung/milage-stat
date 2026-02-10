@@ -134,12 +134,45 @@ This is a **SvelteKit** project with:
 
 ```
 src/
-├── lib/              # Shared components, utilities, services
-├── routes/           # SvelteKit pages and API routes
-│   ├── app/         # Protected/app routes
-│   ├── (auth)/      # Auth routes (if any)
-│   └── api/         # API endpoints
-└── app.html         # Root template
+├── lib/                          # Shared components, utilities, services
+│   ├── components/               # Reusable UI components
+│   │   ├── pwa/                 # PWA-related components
+│   │   │   ├── PwaStatus.svelte
+│   │   │   └── NetworkStatus.svelte
+│   │   └── statistics/          # Statistics/chart components
+│   │       ├── CostChart.svelte
+│   │       ├── EfficiencyChart.svelte
+│   │       ├── PeriodSelector.svelte
+│   │       ├── PredictiveInsights.svelte
+│   │       ├── PriceHistoryChart.svelte
+│   │       └── StatCard.svelte
+│   ├── images/                  # Static images
+│   ├── pwa/                     # PWA functionality
+│   │   ├── notifications.ts
+│   │   └── network-manager.ts
+│   ├── types/                   # TypeScript type definitions
+│   │   └── fuel.ts
+│   ├── utils/                   # Utility functions
+│   │   ├── charts.ts
+│   │   └── stats.ts
+│   ├── firebase.ts              # Firebase configuration
+│   └── settings.ts              # App settings management
+├── routes/                       # SvelteKit pages
+│   ├── +layout.svelte          # Root layout
+│   ├── +page.svelte            # Home page
+│   ├── +page.ts                # Home page server logic
+│   ├── dashboard/              # Dashboard page
+│   │   └── +page.svelte
+│   ├── data/                   # Data management page
+│   │   └── +page.svelte
+│   ├── login/                  # Login page
+│   │   └── +page.svelte
+│   └── settings/               # Settings page
+│       └── +page.svelte
+├── app.html                     # Root template
+├── app.css                      # Global styles
+├── app.d.ts                     # SvelteKit type declarations
+└── demo.spec.ts                 # Demo test file
 ```
 
 ### Environment Setup

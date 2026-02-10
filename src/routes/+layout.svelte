@@ -3,14 +3,20 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import NetworkStatus from '$lib/components/pwa/NetworkStatus.svelte';
+	import PushNotificationManager from '$lib/components/pwa/PushNotificationManager.svelte';
+	import { notificationScheduler } from '$lib/pwa/notification-scheduler';
 	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 
 	let { children } = $props();
 	injectSpeedInsights();
+
+	// Initialize notification scheduler
+	notificationScheduler.startScheduler();
 </script>
 
 <div class="app">
 	<NetworkStatus />
+	<PushNotificationManager />
 	<main>
 		{@render children()}
 	</main>

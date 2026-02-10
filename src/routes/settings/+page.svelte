@@ -14,10 +14,21 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+	import {
+		notificationScheduler,
+		type NotificationSettings
+	} from '$lib/pwa/notification-scheduler';
 
 	let settings = $state({
 		currency: 'USD' as 'USD' | 'VND',
 		units: 'imperial' as 'imperial' | 'metric'
+	});
+
+	let notificationSettings = $state<NotificationSettings>({
+		fuelReminders: true,
+		efficiencyAlerts: true,
+		syncNotifications: true,
+		reminderDays: 7
 	});
 
 	let loading = $state(true);
@@ -41,6 +52,9 @@
 			const loadedSettings = await loadUserSettings(get(currentUser)!.uid);
 			settings = { ...loadedSettings };
 			originalSettings = { ...loadedSettings };
+
+			// Load notification settings
+			notificationSettings = notificationScheduler.getSettings();
 		} catch (error) {
 			console.error(error);
 			message = 'Failed to load settings';
@@ -58,6 +72,9 @@
 
 			await saveUserSettings(get(currentUser)!.uid, settings);
 			originalSettings = { ...settings };
+
+			// Save notification settings
+			notificationScheduler.updateSettings(notificationSettings);
 
 			message = 'Settings saved successfully!';
 			setTimeout(() => (message = null), 3000);
@@ -360,6 +377,112 @@
 						<li>Form labels in fuel entry</li>
 					</ul>
 				</div>
+			</div>
+		</div>
+
+		<!-- Notification Settings -->
+		<div class="card bg-base-100 mb-6 shadow-sm">
+			<div class="card-body">
+				<h2 class="card-title">🔔 Push Notifications</h2>
+				<p class="mb-4 text-sm opacity-70">
+					Configure fuel reminders and efficiency alerts to stay on top of your fuel tracking.
+				</p>
+
+				<!-- Fuel Reminders -->
+				<div class="form-control mb-4">
+					<label class="label cursor-pointer">
+						<span class="label-text font-semibold">Fuel Reminders</span>
+						<input
+							type="checkbox"
+							bind:checked={notificationSettings.fuelReminders}
+							class="toggle toggle-primary"
+						/>
+					</label>
+					<div class="label">
+						<span class="label-text-alt text-xs opacity-70">
+							Get reminded when it's time to refuel based on your usage patterns
+						</span>
+					</div>
+				</div>
+
+				<!-- Reminder Days -->
+				{#if notificationSettings.fuelReminders}
+					<div class="form-control mb-4 ml-4">
+						<label class="label" for="reminder-days">
+							<span class="label-text text-sm">Remind me after</span>
+						</label>
+						<select
+							id="reminder-days"
+							bind:value={notificationSettings.reminderDays}
+							class="select select-bordered select-sm w-full max-w-xs"
+						>
+							<option value={3}>3 days</option>
+							<option value={5}>5 days</option>
+							<option value={7}>1 week</option>
+							<option value={10}>10 days</option>
+							<option value={14}>2 weeks</option>
+						</select>
+						<div class="label">
+							<span class="label-text-alt text-xs opacity-70">
+								Days since last fuel entry to send reminder
+							</span>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Efficiency Alerts -->
+				<div class="form-control mb-4">
+					<label class="label cursor-pointer">
+						<span class="label-text font-semibold">Efficiency Alerts</span>
+						<input
+							type="checkbox"
+							bind:checked={notificationSettings.efficiencyAlerts}
+							class="toggle toggle-primary"
+						/>
+					</label>
+					<div class="label">
+						<span class="label-text-alt text-xs opacity-70">
+							Receive alerts when your fuel efficiency changes significantly
+						</span>
+					</div>
+				</div>
+
+				<!-- Sync Notifications -->
+				<div class="form-control mb-4">
+					<label class="label cursor-pointer">
+						<span class="label-text font-semibold">Sync Notifications</span>
+						<input
+							type="checkbox"
+							bind:checked={notificationSettings.syncNotifications}
+							class="toggle toggle-primary"
+						/>
+					</label>
+					<div class="label">
+						<span class="label-text-alt text-xs opacity-70">
+							Get notified when offline data is synced to the cloud
+						</span>
+					</div>
+				</div>
+
+				<!-- Test Notification -->
+				<div class="divider text-sm">Test</div>
+				<button
+					class="btn btn-outline btn-sm"
+					onclick={() => {
+						if ('Notification' in window && Notification.permission === 'granted') {
+							new Notification('🎉 Test Notification', {
+								body: 'This is a test notification from Milage Stat!',
+								icon: '/pwa-192x192.png',
+								tag: 'test-notification'
+							});
+						} else {
+							message = 'Notifications are not enabled';
+							setTimeout(() => (message = null), 3000);
+						}
+					}}
+				>
+					Send Test Notification
+				</button>
 			</div>
 		</div>
 

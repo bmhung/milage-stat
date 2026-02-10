@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import {
 		userSettings,
 		currency,
@@ -22,7 +23,7 @@
 	let loading = $state(true);
 	let saving = $state(false);
 	let message = $state<string | null>(null);
-	let originalSettings = $state({ ...settings });
+	let originalSettings = $derived({ ...settings });
 
 	// CSV Import states
 	let importing = $state(false);
@@ -32,7 +33,7 @@
 
 	onMount(async () => {
 		if (!get(currentUser)) {
-			goto('/login');
+			goto(resolve('/login'));
 			return;
 		}
 
@@ -41,6 +42,7 @@
 			settings = { ...loadedSettings };
 			originalSettings = { ...loadedSettings };
 		} catch (error) {
+			console.error(error);
 			message = 'Failed to load settings';
 		} finally {
 			loading = false;
@@ -60,6 +62,7 @@
 			message = 'Settings saved successfully!';
 			setTimeout(() => (message = null), 3000);
 		} catch (error) {
+			console.error(error);
 			message = 'Failed to save settings';
 		} finally {
 			saving = false;
@@ -145,6 +148,7 @@
 			message = `Successfully imported ${importStats.imported} entries${importStats.errors > 0 ? ` (${importStats.errors} errors)` : ''}`;
 			setTimeout(() => (message = null), 5000);
 		} catch (error: any) {
+			console.error(error);
 			message = `Import failed: ${error.message}`;
 		} finally {
 			importing = false;

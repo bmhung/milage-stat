@@ -7,7 +7,6 @@ import { writable } from 'svelte/store';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
-console.log('env', import.meta.env);
 // Your web app's Firebase configuration
 const firebaseConfig = {
 	apiKey: import.meta.env.VITE_API_KEY,
@@ -17,7 +16,6 @@ const firebaseConfig = {
 	authDomain: 'milagestat.firebaseapp.com',
 	storageBucket: 'milagestat.firebasestorage.app'
 };
-console.log(firebaseConfig);
 
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);

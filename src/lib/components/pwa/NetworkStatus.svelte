@@ -8,6 +8,6 @@
 		? 'border-green-500'
 		: 'border-red-500'}"
 >
-	<span class="text-lg">{networkStatus.isOnline ? '🌐' : '📴'}</span>
-	<span class="text-sm font-medium">{networkStatus.isOnline ? 'Online' : 'Offline'}</span>
+	<span class="text-lg">{$networkStatus.isOnline ? '🌐' : '📴'}</span>
+	<span class="text-sm font-medium">{$networkStatus.isOnline ? 'Online' : 'Offline'}</span>
 </div>

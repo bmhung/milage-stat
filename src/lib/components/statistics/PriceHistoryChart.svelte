@@ -14,7 +14,7 @@
 
 	let chartElement: HTMLCanvasElement;
 	let priceChart: any;
-	let chartData: { labels: string[]; datasets: any[] } = { labels: [], datasets: [] };
+	let chartData = $state<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
 	$effect(() => {
 		if (entries && entries.length > 0) {

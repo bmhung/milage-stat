@@ -12,6 +12,8 @@
 		units
 	} from '$lib/settings';
 	import { onMount } from 'svelte';
+	import { backgroundSync } from '$lib/pwa/background-sync';
+	import { networkStatus } from '$lib/pwa/network-manager';
 
 	interface FuelEntry {
 		id: string;
@@ -161,7 +163,14 @@
 		try {
 			submitting = true;
 
-			await addDoc(collection(db, 'fills'), {
+			// Check network status
+			let isOnline = true;
+			const unsubscribe = networkStatus.subscribe((status) => {
+				isOnline = status.isOnline;
+			});
+			unsubscribe();
+
+			const fuelEntryData = {
 				userId: $currentUser.uid,
 				odo: Number(odo),
 				createdAt: new Date(),
@@ -169,10 +178,18 @@
 				price: Number(price),
 				amount: Number(amount),
 				total
-			});
+			};
 
-			// Show success message
-			submissionMessage = `Fuel entry saved successfully! Total: ${formatCurrency(total)}`;
+			if (isOnline) {
+				// Online: Save directly to Firebase
+				await addDoc(collection(db, 'fills'), fuelEntryData);
+				submissionMessage = `Fuel entry saved successfully! Total: ${formatCurrency(total)}`;
+			} else {
+				// Offline: Add to sync queue
+				backgroundSync.addFuelEntry(fuelEntryData);
+				submissionMessage = `Fuel entry saved offline! Will sync when connection is restored. Total: ${formatCurrency(total)}`;
+			}
+
 			showSuccess = true;
 
 			// Reset form after successful save
@@ -180,8 +197,10 @@
 			price = '';
 			amount = '';
 
-			// Refresh last entry data
-			await fetchLastEntry();
+			// Refresh last entry data (only if online)
+			if (isOnline) {
+				await fetchLastEntry();
+			}
 
 			// Hide success message after 3 seconds
 			setTimeout(() => {
@@ -189,8 +208,30 @@
 			}, 3000);
 		} catch (error: any) {
 			console.error('Error saving fuel entry:', error);
-			submissionMessage = `Error saving fuel entry: ${error.message}`;
-			showSuccess = true;
+
+			// If Firebase save fails, try to add to sync queue as fallback
+			try {
+				const fuelEntryData = {
+					userId: $currentUser.uid,
+					odo: Number(odo),
+					createdAt: new Date(),
+					actualDate: new Date(createdAt),
+					price: Number(price),
+					amount: Number(amount),
+					total
+				};
+				backgroundSync.addFuelEntry(fuelEntryData);
+				submissionMessage = `Connection issue. Fuel entry saved offline and will sync automatically. Total: ${formatCurrency(total)}`;
+				showSuccess = true;
+
+				// Reset form
+				odo = '';
+				price = '';
+				amount = '';
+			} catch (syncError) {
+				submissionMessage = `Error saving fuel entry: ${error.message}`;
+				showSuccess = true;
+			}
 		} finally {
 			submitting = false;
 		}

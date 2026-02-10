@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import NetworkStatus from '$lib/components/pwa/NetworkStatus.svelte';
 	import PushNotificationManager from '$lib/components/pwa/PushNotificationManager.svelte';
+	import SyncStatus from '$lib/components/pwa/SyncStatus.svelte';
 	import { notificationScheduler } from '$lib/pwa/notification-scheduler';
 	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 
@@ -40,6 +41,10 @@
 				class="tab flex-1/3"
 				class:tab-active={page.url.pathname === '/settings'}>Settings</a
 			>
+		</div>
+		<!-- Sync Status Indicator -->
+		<div class="fixed top-4 right-4 z-40">
+			<SyncStatus />
 		</div>
 	</footer>
 </div>

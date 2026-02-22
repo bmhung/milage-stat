@@ -10,7 +10,7 @@
 		getUnitLabel
 	} from '$lib/settings';
 	import { get } from 'svelte/store';
-	import { user as currentUser, db } from '$lib/firebase';
+	import { user as currentUser, isAuthReady, db } from '$lib/firebase';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -34,6 +34,7 @@
 	let loading = $state(true);
 	let saving = $state(false);
 	let message = $state<string | null>(null);
+	let authChecking = $state(true);
 	let originalSettings = $derived({ ...settings });
 
 	// CSV Import states
@@ -43,13 +44,21 @@
 	let importStats = $state({ imported: 0, errors: 0, total: 0 });
 
 	onMount(async () => {
-		if (!get(currentUser)) {
-			goto(resolve('/login'));
+		// Wait for auth to be ready
+		if (!$isAuthReady) {
 			return;
 		}
 
+		// If not logged in, redirect to login
+		if (!$currentUser) {
+			goto('/login');
+			return;
+		}
+
+		authChecking = false;
+
 		try {
-			const loadedSettings = await loadUserSettings(get(currentUser)!.uid);
+			const loadedSettings = await loadUserSettings($currentUser.uid);
 			settings = { ...loadedSettings };
 			originalSettings = { ...loadedSettings };
 
@@ -294,7 +303,11 @@
 <div class="container mx-auto p-4">
 	<h1 class="mb-6 text-2xl font-bold">Settings</h1>
 
-	{#if loading}
+	{#if authChecking}
+		<div class="flex justify-center py-8">
+			<span class="loading loading-spinner loading-lg"></span>
+		</div>
+	{:else if loading}
 		<div class="flex justify-center py-8">
 			<span class="loading loading-spinner loading-lg"></span>
 		</div>

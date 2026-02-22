@@ -3,7 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, type User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { writable } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -23,10 +23,13 @@ export const db = getFirestore();
 export const auth = getAuth();
 export const storage = getStorage();
 
+// Auth state stores
 const currentUser = writable<User | null>(null);
+const authReady = writable(false);
 
 onAuthStateChanged(auth, (user) => {
 	currentUser.set(user);
+	authReady.set(true);
 });
 
 function userStore() {
@@ -54,3 +57,16 @@ function userStore() {
 }
 
 export const user = userStore();
+
+// Derived store for auth ready state
+export const isAuthReady = derived(authReady, ($authReady) => $authReady);
+
+// Helper to check if user is authenticated (synchronous check)
+export function isAuthenticated(): boolean {
+	let result = false;
+	const unsubscribe = user.subscribe((u) => {
+		result = u !== null;
+	});
+	unsubscribe();
+	return result;
+}

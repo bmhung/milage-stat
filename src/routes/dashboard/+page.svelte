@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
-	import { db, user as currentUser } from '$lib/firebase';
+	import { db, user as currentUser, isAuthReady } from '$lib/firebase';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { formatCurrency, getUnitLabel, units } from '$lib/settings';
@@ -27,6 +27,7 @@
 	let selectedPeriod = $state('all');
 	let isMobile = $state(false);
 	let error = $state<string | null>(null);
+	let authChecking = $state(true);
 
 	// Derived state for filtered data
 	let filteredEntries = $derived(() => {
@@ -74,10 +75,18 @@
 	});
 
 	onMount(async () => {
-		if (!$currentUser) {
-			goto(resolve('/login'));
+		// Wait for auth to be ready
+		if (!$isAuthReady) {
 			return;
 		}
+
+		// If not logged in, redirect to login
+		if (!$currentUser) {
+			goto('/login');
+			return;
+		}
+
+		authChecking = false;
 
 		try {
 			await loadUserSettings($currentUser.uid);
@@ -136,67 +145,74 @@
 <div class="container mx-auto p-4">
 	<h1 class="mb-6 text-2xl font-bold">Statistics Dashboard</h1>
 
-	<!-- Period Selector -->
-	<div class="mb-6 flex justify-center">
-		<PeriodSelector {selectedPeriod} onPeriodChange={handlePeriodChange} />
-	</div>
-
-	{#if loading}
+	<!-- Auth Check -->
+	{#if authChecking}
 		<div class="flex justify-center py-8">
 			<span class="loading loading-spinner loading-lg"></span>
 		</div>
-	{:else if error}
-		<div class="alert alert-error mb-6">
-			<span>Error loading data: {error}</span>
-		</div>
-	{:else if entries.length === 0}
-		<div class="py-8 text-center opacity-70">
-			<h3 class="mb-2 text-lg font-semibold">No fuel data available</h3>
-			<p>Add your first fuel entry to see statistics and trends!</p>
-		</div>
+		<!-- Period Selector -->
 	{:else}
-		<!-- KPI Cards -->
-		<div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-			<StatCard
-				title="Average Efficiency"
-				value={formatEfficiencyValue(statistics().averageEfficiency)}
-				icon="📈"
-				trend={statistics().overallTrend}
-				trendValue={statistics().overallTrend === 'up'
-					? 'Improving'
-					: statistics().overallTrend === 'down'
-						? 'Declining'
-						: 'Stable'}
-			/>
-			<StatCard title="Total Cost" value={formatCurrency(statistics().totalCost)} icon="💰" />
-			<StatCard
-				title="Total Distance"
-				value={formatDistance(statistics().totalDistance)}
-				icon="📍"
-			/>
-			<StatCard title="Number of Fill-ups" value={statistics().fillUpCount} icon="⛽" />
+		<div class="mb-6 flex justify-center">
+			<PeriodSelector {selectedPeriod} onPeriodChange={handlePeriodChange} />
 		</div>
 
-		<!-- Charts Section - Mobile First Layout -->
-		<div class="space-y-6">
-			<!-- Efficiency Chart - Full Width -->
-			<EfficiencyChart entries={filteredEntries()} {isMobile} showPredictions={true} />
-
-			<!-- Cost Analysis - Full Width on Mobile, Half on Desktop -->
-			<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-				<!-- Cost Chart -->
-				<div class="lg:col-span-1">
-					<CostChart entries={filteredEntries()} {isMobile} />
-				</div>
-
-				<!-- Price History Chart -->
-				<div class="lg:col-span-1">
-					<PriceHistoryChart entries={filteredEntries()} {isMobile} />
-				</div>
+		{#if loading}
+			<div class="flex justify-center py-8">
+				<span class="loading loading-spinner loading-lg"></span>
+			</div>
+		{:else if error}
+			<div class="alert alert-error mb-6">
+				<span>Error loading data: {error}</span>
+			</div>
+		{:else if entries.length === 0}
+			<div class="py-8 text-center opacity-70">
+				<h3 class="mb-2 text-lg font-semibold">No fuel data available</h3>
+				<p>Add your first fuel entry to see statistics and trends!</p>
+			</div>
+		{:else}
+			<!-- KPI Cards -->
+			<div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+				<StatCard
+					title="Average Efficiency"
+					value={formatEfficiencyValue(statistics().averageEfficiency)}
+					icon="📈"
+					trend={statistics().overallTrend}
+					trendValue={statistics().overallTrend === 'up'
+						? 'Improving'
+						: statistics().overallTrend === 'down'
+							? 'Declining'
+							: 'Stable'}
+				/>
+				<StatCard title="Total Cost" value={formatCurrency(statistics().totalCost)} icon="💰" />
+				<StatCard
+					title="Total Distance"
+					value={formatDistance(statistics().totalDistance)}
+					icon="📍"
+				/>
+				<StatCard title="Number of Fill-ups" value={statistics().fillUpCount} icon="⛽" />
 			</div>
 
-			<!-- Predictive Insights - Full Width -->
-			<PredictiveInsights entries={filteredEntries()} />
-		</div>
+			<!-- Charts Section - Mobile First Layout -->
+			<div class="space-y-6">
+				<!-- Efficiency Chart - Full Width -->
+				<EfficiencyChart entries={filteredEntries()} {isMobile} showPredictions={true} />
+
+				<!-- Cost Analysis - Full Width on Mobile, Half on Desktop -->
+				<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+					<!-- Cost Chart -->
+					<div class="lg:col-span-1">
+						<CostChart entries={filteredEntries()} {isMobile} />
+					</div>
+
+					<!-- Price History Chart -->
+					<div class="lg:col-span-1">
+						<PriceHistoryChart entries={filteredEntries()} {isMobile} />
+					</div>
+				</div>
+
+				<!-- Predictive Insights - Full Width -->
+				<PredictiveInsights entries={filteredEntries()} />
+			</div>
+		{/if}
 	{/if}
 </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, untrack } from 'svelte';
 	import Chart from 'chart.js/auto';
 	import type { CostData } from '$lib/utils/stats';
 	import { groupByMonth } from '$lib/utils/stats';
@@ -19,7 +19,7 @@
 
 	$effect(() => {
 		if (entries && entries.length > 0) {
-			updateChartData();
+			untrack(() => updateChartData());
 		}
 	});
 
@@ -53,7 +53,7 @@
 
 	function updateChart() {
 		if (costChart && chartData.labels.length > 0) {
-			costChart.data = chartData;
+			costChart.data = $state.snapshot(chartData);
 			costChart.update('none');
 		}
 	}
@@ -61,7 +61,7 @@
 	onMount(() => {
 		if (chartElement) {
 			const config = createCostChartOptions(isMobile);
-			config.data = chartData;
+			config.data = $state.snapshot(chartData);
 			costChart = new Chart(chartElement, config);
 		}
 	});

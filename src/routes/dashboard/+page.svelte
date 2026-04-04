@@ -74,26 +74,16 @@
 		};
 	});
 
-	onMount(async () => {
-		// Wait for auth to be ready
-		if (!$isAuthReady) {
-			return;
-		}
-
-		// If not logged in, redirect to login
-		if (!$currentUser) {
-			goto('/login');
-			return;
-		}
-
-		authChecking = false;
+	async function loadData(uid: string) {
+		loading = true;
+		error = null;
 
 		try {
-			await loadUserSettings($currentUser.uid);
+			await loadUserSettings(uid);
 
 			const q = query(
 				collection(db, 'fills'),
-				where('userId', '==', $currentUser.uid),
+				where('userId', '==', uid),
 				orderBy('actualDate', 'asc')
 			);
 
@@ -112,6 +102,18 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	$effect(() => {
+		if (!$isAuthReady) return;
+
+		if (!$currentUser) {
+			goto('/login');
+			return;
+		}
+
+		authChecking = false;
+		loadData($currentUser.uid);
 	});
 
 	function handlePeriodChange(period: string) {

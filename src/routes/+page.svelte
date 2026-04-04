@@ -362,6 +362,7 @@
 		<input
 			id="odo"
 			type="number"
+			inputmode="numeric"
 			bind:value={odo}
 			placeholder="Current odometer reading"
 			class="input input-bordered flex-1 {odoError ? 'input-error' : ''}"
@@ -377,6 +378,7 @@
 	<input
 		id="price"
 		type="number"
+		inputmode="decimal"
 		bind:value={price}
 		placeholder={`Price per ${getUnitLabel()}`}
 		class="input input-bordered"
@@ -389,6 +391,7 @@
 	<input
 		id="amount"
 		type="number"
+		inputmode="decimal"
 		bind:value={amount}
 		placeholder={`Amount in ${getUnitLabel()}`}
 		class="input input-bordered"

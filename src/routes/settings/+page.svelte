@@ -507,7 +507,7 @@
 					<p class="text-sm opacity-70">
 						View, edit, and manage all your fuel entries with filtering and sorting options.
 					</p>
-					<a href="/app/data" class="btn btn-outline btn-block"> 📊 View Fuel Data </a>
+					<a href="/data" class="btn btn-outline btn-block"> 📊 View Fuel Data </a>
 
 					<!-- CSV Import Section -->
 					<div class="divider text-sm">OR</div>

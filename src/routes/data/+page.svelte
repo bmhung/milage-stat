@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { collection, getDocs, query, where, orderBy, deleteDoc, doc } from 'firebase/firestore';
-	import { user as currentUser, db } from '$lib/firebase';
-	import { onMount } from 'svelte';
+	import { user as currentUser, db, isAuthReady } from '$lib/firebase';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { loadUserSettings, formatCurrency, getUnitLabel, formatAmount } from '$lib/settings';
@@ -15,13 +14,15 @@
 	let endDate = $state('');
 	let filterActive = $state(false);
 
-	onMount(async () => {
+	$effect(() => {
+		if (!$isAuthReady) return;
+
 		if (!$currentUser) {
 			goto(resolve('/login'));
 			return;
 		}
-		await loadUserSettings($currentUser.uid);
-		await fetchEntries();
+
+		loadUserSettings($currentUser.uid).then(() => fetchEntries());
 	});
 
 	async function fetchEntries() {

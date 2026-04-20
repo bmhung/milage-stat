@@ -377,12 +377,11 @@
 	<label for="price">{getPriceLabel()}</label>
 	<input
 		id="price"
-		type="number"
+		type="text"
 		inputmode="decimal"
 		bind:value={price}
 		placeholder={`Price per ${getUnitLabel()}`}
 		class="input input-bordered"
-		step="0.01"
 		disabled={submitting}
 		onkeydown={(e) => handleKeydown(e, 'amount')}
 	/>
@@ -390,12 +389,11 @@
 	<label for="amount">{getAmountLabel()}</label>
 	<input
 		id="amount"
-		type="number"
+		type="text"
 		inputmode="decimal"
 		bind:value={amount}
 		placeholder={`Amount in ${getUnitLabel()}`}
 		class="input input-bordered"
-		step="0.001"
 		disabled={submitting}
 		onkeydown={(e) => handleKeydown(e)}
 	/>

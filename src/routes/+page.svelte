@@ -29,7 +29,13 @@
 	let createdAt = $state(formatDateTimeForInput(new Date()));
 	let price = $state('');
 	let amount = $state('');
-	let total = $derived(Number(price) * Number(amount));
+
+	// Normalize comma decimal separator (iOS keyboard) to dot before parsing
+	function parseDecimal(value: string): number {
+		return Number(value.replace(',', '.'));
+	}
+
+	let total = $derived(parseDecimal(price) * parseDecimal(amount));
 	let lastEntry: FuelEntry | null = $state(null);
 	let loadingPrevious = $state(true);
 	let submitting = $state(false);
@@ -175,8 +181,8 @@
 				odo: Number(odo),
 				createdAt: new Date(),
 				actualDate: new Date(createdAt),
-				price: Number(price),
-				amount: Number(amount),
+				price: parseDecimal(price),
+				amount: parseDecimal(amount),
 				total
 			};
 
@@ -216,8 +222,8 @@
 					odo: Number(odo),
 					createdAt: new Date(),
 					actualDate: new Date(createdAt),
-					price: Number(price),
-					amount: Number(amount),
+					price: parseDecimal(price),
+					amount: parseDecimal(amount),
 					total
 				};
 				backgroundSync.addFuelEntry(fuelEntryData);

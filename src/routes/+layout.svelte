@@ -56,7 +56,7 @@
 		display: flex;
 		flex-direction: column;
 		padding: 1rem;
-		padding-top: calc(1.5rem + 1rem);
+		padding-top: calc(1rem + env(safe-area-inset-top));
 		padding-bottom: 60px;
 		width: 100%;
 		max-width: 64rem;

@@ -75,20 +75,60 @@ export function groupByMonth(entries: FuelEntry[]): CostData[] {
 	}));
 }
 
+// A fill-up counts as a "full tank" when its amount is at least this fraction of
+// the typical (median) fill. Anything below is treated as a partial top-up.
+const FULL_TANK_RATIO = 0.6;
+
+// Detect partial fill-ups automatically. Partial fills can't produce a valid
+// efficiency on their own (the fuel added doesn't match the distance driven), so
+// they get rolled into the next full tank instead of creating a misleading
+// dip-then-spike in the trend.
+function detectFullThreshold(entries: FuelEntry[]): number {
+	const amounts = entries
+		.map((e) => e.amount)
+		.filter((a) => a > 0)
+		.sort((a, b) => a - b);
+	if (!amounts.length) return 0;
+	const median = amounts[Math.floor(amounts.length / 2)];
+	return median * FULL_TANK_RATIO;
+}
+
 export function generateEfficiencyTrend(entries: FuelEntry[]): EfficiencyData[] {
 	const trendData: EfficiencyData[] = [];
+	if (entries.length < 2) return trendData;
 
-	for (let i = 1; i < entries.length; i++) {
-		const prevEntry = entries[i - 1];
-		const currEntry = entries[i];
+	const currentUnits = get(units);
+	const fullThreshold = detectFullThreshold(entries);
+	const isFull = (entry: FuelEntry) => entry.amount >= fullThreshold;
 
-		const entryDate =
-			currEntry.createdAt instanceof Date ? currEntry.createdAt : currEntry.createdAt.toDate();
+	// Tank-to-tank method: only measure efficiency between two full tanks, summing
+	// every (partial or full) fill added in between. The starting full tank's own
+	// amount isn't counted — it just establishes a known-full baseline.
+	let segStartOdo: number | null = null;
+	let accumulatedFuel = 0;
 
-		trendData.push({
-			date: entryDate,
-			actual: calculateEfficiency(prevEntry, currEntry)
-		});
+	for (const entry of entries) {
+		if (segStartOdo === null) {
+			// Wait for a full tank before we can start measuring a segment.
+			if (isFull(entry)) segStartOdo = entry.odo;
+			continue;
+		}
+
+		accumulatedFuel += entry.amount;
+
+		if (isFull(entry)) {
+			const distance = entry.odo - segStartOdo;
+			if (distance > 0 && accumulatedFuel > 0) {
+				const efficiency =
+					currentUnits === 'metric'
+						? (accumulatedFuel / distance) * 100
+						: distance / accumulatedFuel;
+				trendData.push({ date: getEntryDate(entry), actual: efficiency });
+			}
+			// Close this segment and start the next one at the current full tank.
+			segStartOdo = entry.odo;
+			accumulatedFuel = 0;
+		}
 	}
 
 	return trendData;

@@ -1,6 +1,14 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, type User } from 'firebase/auth';
+import {
+	getAuth,
+	onAuthStateChanged,
+	sendSignInLinkToEmail,
+	isSignInWithEmailLink,
+	signInWithEmailLink,
+	signOut,
+	type User
+} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { writable, derived } from 'svelte/store';
@@ -69,4 +77,47 @@ export function isAuthenticated(): boolean {
 	});
 	unsubscribe();
 	return result;
+}
+
+// --- Passwordless email-link (magic link) sign-in ---
+
+const EMAIL_FOR_SIGN_IN_KEY = 'emailForSignIn';
+
+// Send a one-time sign-in link to the given email. The link returns to /login,
+// which completes the sign-in via completeEmailLinkSignIn().
+export async function sendLoginLink(email: string): Promise<void> {
+	const actionCodeSettings = {
+		url: `${window.location.origin}/login`,
+		handleCodeInApp: true // required for email-link sign-in
+	};
+	await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+	// Remember the email so we don't have to prompt for it when the link is opened.
+	window.localStorage.setItem(EMAIL_FOR_SIGN_IN_KEY, email);
+}
+
+// True if the current URL is a Firebase email sign-in link.
+export function isEmailSignInLink(url: string): boolean {
+	return isSignInWithEmailLink(auth, url);
+}
+
+// Complete sign-in when the user opens the magic link. Returns true on success.
+export async function completeEmailLinkSignIn(url: string): Promise<boolean> {
+	if (!isSignInWithEmailLink(auth, url)) return false;
+
+	// The link may be opened on a different device, where localStorage is empty —
+	// fall back to asking the user to confirm their email.
+	let email = window.localStorage.getItem(EMAIL_FOR_SIGN_IN_KEY);
+	if (!email) {
+		email = window.prompt('Please confirm your email to finish signing in');
+	}
+	if (!email) return false;
+
+	await signInWithEmailLink(auth, email, url);
+	window.localStorage.removeItem(EMAIL_FOR_SIGN_IN_KEY);
+	return true;
+}
+
+// Sign the current user out.
+export async function logout(): Promise<void> {
+	await signOut(auth);
 }

@@ -10,7 +10,7 @@
 		getUnitLabel
 	} from '$lib/settings';
 	import { get } from 'svelte/store';
-	import { user as currentUser, isAuthReady, db } from '$lib/firebase';
+	import { user as currentUser, isAuthReady, db, logout } from '$lib/firebase';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -35,6 +35,7 @@
 	let saving = $state(false);
 	let message = $state<string | null>(null);
 	let authChecking = $state(true);
+	let signingOut = $state(false);
 	let originalSettings = $derived({ ...settings });
 
 	// CSV Import states
@@ -92,6 +93,19 @@
 			message = 'Failed to save settings';
 		} finally {
 			saving = false;
+		}
+	}
+
+	async function signOut() {
+		try {
+			signingOut = true;
+			await logout();
+			goto('/login');
+		} catch (error) {
+			console.error('Sign out failed:', error);
+			message = 'Failed to sign out';
+			setTimeout(() => (message = null), 3000);
+			signingOut = false;
 		}
 	}
 
@@ -542,6 +556,26 @@
 						{/if}
 					</div>
 				</div>
+			</div>
+		</div>
+
+		<!-- Account -->
+		<div class="card bg-base-100 mb-6 shadow-sm">
+			<div class="card-body">
+				<h3 class="card-title text-base">Account</h3>
+				{#if $currentUser}
+					<p class="text-sm opacity-70">
+						Signed in as <span class="font-semibold">{$currentUser.email ?? 'your account'}</span>
+					</p>
+				{/if}
+				<button class="btn btn-outline btn-error btn-block" onclick={signOut} disabled={signingOut}>
+					{#if signingOut}
+						<span class="loading loading-spinner loading-sm"></span>
+						Signing out...
+					{:else}
+						Sign Out
+					{/if}
+				</button>
 			</div>
 		</div>
 

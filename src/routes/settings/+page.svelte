@@ -11,7 +11,6 @@
 	} from '$lib/settings';
 	import { get } from 'svelte/store';
 	import { user as currentUser, isAuthReady, db, logout } from '$lib/firebase';
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 	import {
@@ -44,11 +43,13 @@
 	let importProgress = $state('');
 	let importStats = $state({ imported: 0, errors: 0, total: 0 });
 
-	onMount(async () => {
+	// Reactive auth guard: re-runs as auth state hydrates, so a hard reload on
+	// this page recovers instead of getting stuck on the loading spinner.
+	let settingsLoaded = false;
+
+	$effect(() => {
 		// Wait for auth to be ready
-		if (!$isAuthReady) {
-			return;
-		}
+		if (!$isAuthReady) return;
 
 		// If not logged in, redirect to login
 		if (!$currentUser) {
@@ -58,8 +59,15 @@
 
 		authChecking = false;
 
+		// Load user data once, the first time we have an authenticated user.
+		if (settingsLoaded) return;
+		settingsLoaded = true;
+		loadSettings($currentUser.uid);
+	});
+
+	async function loadSettings(uid: string) {
 		try {
-			const loadedSettings = await loadUserSettings($currentUser.uid);
+			const loadedSettings = await loadUserSettings(uid);
 			settings = { ...loadedSettings };
 			originalSettings = { ...loadedSettings };
 
@@ -71,7 +79,7 @@
 		} finally {
 			loading = false;
 		}
-	});
+	}
 
 	async function saveSettings() {
 		if (!get(currentUser)) return;
